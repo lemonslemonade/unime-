@@ -6,30 +6,36 @@ if (!process.env.API_KEY) {
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-const complaintSeveritySchema = {
+const complaintAnalysisSchema = {
   type: Type.OBJECT,
   properties: {
     severity: {
       type: Type.STRING,
       description: 'The estimated severity level of the complaint. e.g., "Low", "Medium", "High".',
     },
+    recommendations: {
+        type: Type.ARRAY,
+        items: { type: Type.STRING },
+        description: 'A list of 2-3 concise, actionable next steps for the user based on their complaint. For example: "Contact the business\'s data protection officer." or "Keep a record of all communication."'
+    }
   },
-  required: ["severity"],
+  required: ["severity", "recommendations"],
 };
 
 export interface ComplaintAnalysis {
   category: string;
   severity: string;
+  recommendations: string[];
 }
 
 export const categorizeComplaint = async (complaintDetails: string, category: string): Promise<ComplaintAnalysis | null> => {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: `Analyze the following data privacy complaint, which has been categorized by the user as "${category}". Based on the details, determine the severity level. Details: ${complaintDetails}`,
+      contents: `Analyze the following data privacy complaint, which has been categorized by the user as "${category}". Based on the details, determine the severity level (Low, Medium, or High) and provide a list of 2-3 concise, actionable recommendations for the user to take next. Details: ${complaintDetails}`,
       config: {
         responseMimeType: "application/json",
-        responseSchema: complaintSeveritySchema,
+        responseSchema: complaintAnalysisSchema,
         temperature: 0,
       },
     });
@@ -40,10 +46,10 @@ export const categorizeComplaint = async (complaintDetails: string, category: st
       return null;
     }
 
-    const result = JSON.parse(jsonText) as { severity: string };
-    return { category, severity: result.severity };
+    const result = JSON.parse(jsonText) as { severity: string; recommendations: string[] };
+    return { category, severity: result.severity, recommendations: result.recommendations };
   } catch (error) {
-    console.error("Error analyzing complaint severity with Gemini API:", error);
+    console.error("Error analyzing complaint with Gemini API:", error);
     return null;
   }
 };

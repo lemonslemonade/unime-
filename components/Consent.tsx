@@ -1,12 +1,6 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { ConsentPreference } from '../types';
-
-const initialConsentPreferences: ConsentPreference[] = [
-  { id: '1', businessName: 'Global Retail Inc.', businessLogo: 'https://logo.clearbit.com/walmart.com', purpose: 'Marketing emails and promotions', status: 'opted-in', lastUpdated: '2023-10-15' },
-  { id: '2', businessName: 'AgriConnect SA', businessLogo: 'https://logo.clearbit.com/deere.com', purpose: 'Product updates and newsletters', status: 'opted-out', lastUpdated: '2023-09-22' },
-  { id: '3', businessName: 'Sportify Gear', businessLogo: 'https://logo.clearbit.com/nike.com', purpose: 'Exclusive offers for members', status: 'opted-in', lastUpdated: '2023-11-01' },
-];
 
 const ConsentHistoryItem: React.FC<{ item: ConsentPreference }> = ({ item }) => (
     <div className="flex justify-between items-center p-3 border-b border-gray-200">
@@ -58,26 +52,18 @@ const ConsentToggle: React.FC<{ pref: ConsentPreference, onToggle: (id: string) 
     </div>
 );
 
+interface ConsentProps {
+  preferences: ConsentPreference[];
+  onToggle: (id: string) => void;
+}
 
-const Consent: React.FC = () => {
-  const [preferences, setPreferences] = useState<ConsentPreference[]>(initialConsentPreferences);
-
-  const handleToggle = (id: string) => {
-    setPreferences(prefs =>
-      prefs.map(p =>
-        p.id === id
-          ? { ...p, status: p.status === 'opted-in' ? 'opted-out' : 'opted-in', lastUpdated: new Date().toISOString().split('T')[0] }
-          : p
-      )
-    );
-  };
-
+const Consent: React.FC<ConsentProps> = ({ preferences, onToggle }) => {
   return (
     <div className="p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
             <h2 className="text-2xl font-bold text-brand-dark">Consent Preferences</h2>
             {preferences.map(pref => (
-                <ConsentToggle key={pref.id} pref={pref} onToggle={handleToggle} />
+                <ConsentToggle key={pref.id} pref={pref} onToggle={onToggle} />
             ))}
         </div>
         <div className="lg:col-span-1">

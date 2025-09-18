@@ -1,6 +1,6 @@
-
-import React, { useState } from 'react';
-import { View, UserProfile } from './types';
+import React, { useState, useEffect } from 'react';
+import { View, UserProfile, ConsentPreference } from './types';
+import { dbUsers, dbConsentPreferences } from './database/db';
 import Login from './components/Login';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
@@ -17,17 +17,6 @@ import ComplaintIcon from './components/icons/ComplaintIcon';
 import VerifiedIcon from './components/icons/VerifiedIcon';
 import BusinessIcon from './components/icons/BusinessIcon';
 import SSOIcon from './components/icons/SSOIcon';
-
-const mockUser: UserProfile = {
-  id: 'user-123',
-  firstName: 'Alex',
-  lastName: 'Doe',
-  email: 'alex.doe@example.com',
-  phone: '+27 82 123 4567',
-  address: '123 Main Street, Cape Town, 8001',
-  isVerified: false,
-  verificationStatus: 'Unverified',
-};
 
 const NavItem: React.FC<{
   icon: React.ReactNode;
@@ -51,8 +40,18 @@ const NavItem: React.FC<{
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState<UserProfile>(mockUser);
+  const [user, setUser] = useState<UserProfile>(dbUsers[0]);
   const [activeView, setActiveView] = useState<View>(View.Dashboard);
+  const [consentPreferences, setConsentPreferences] = useState<ConsentPreference[]>(dbConsentPreferences);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      const savedPicture = localStorage.getItem(`profilePicture-${user.id}`);
+      if (savedPicture) {
+        setUser(prevUser => ({ ...prevUser, profilePictureUrl: savedPicture }));
+      }
+    }
+  }, [isLoggedIn, user.id]);
 
   const handleLogin = () => setIsLoggedIn(true);
   const handleLogout = () => setIsLoggedIn(false);
@@ -63,16 +62,30 @@ const App: React.FC = () => {
       isVerified: true,
       verificationStatus: 'Verified',
     }));
-    // After successful verification, navigate the user to the dashboard.
     setActiveView(View.Dashboard);
+  };
+  
+  const handleProfilePictureUpdate = (newPicture: string) => {
+    setUser(prevUser => ({ ...prevUser, profilePictureUrl: newPicture }));
+    localStorage.setItem(`profilePicture-${user.id}`, newPicture);
+  };
+  
+  const handleConsentToggle = (id: string) => {
+    setConsentPreferences(prefs =>
+      prefs.map(p =>
+        p.id === id
+          ? { ...p, status: p.status === 'opted-in' ? 'opted-out' : 'opted-in', lastUpdated: new Date().toISOString().split('T')[0] }
+          : p
+      )
+    );
   };
 
   const renderView = () => {
     switch (activeView) {
       case View.Dashboard:
-        return <Dashboard user={user} />;
+        return <Dashboard user={user} consentPreferences={consentPreferences} onProfilePictureUpdate={handleProfilePictureUpdate} />;
       case View.Consent:
-        return <Consent />;
+        return <Consent preferences={consentPreferences} onToggle={handleConsentToggle} />;
       case View.DataSharing:
         return <DataSharing />;
       case View.Complaints:
@@ -84,7 +97,7 @@ const App: React.FC = () => {
       case View.ForBusiness:
         return <ForBusiness />;
       default:
-        return <Dashboard user={user} />;
+        return <Dashboard user={user} consentPreferences={consentPreferences} onProfilePictureUpdate={handleProfilePictureUpdate} />;
     }
   };
 
@@ -102,12 +115,11 @@ const App: React.FC = () => {
     { view: View.ForBusiness, label: 'For Business', icon: <BusinessIcon /> },
   ];
   
-  // Conditionally render the 'Verified' nav item, but keep 'Get Verified' always visible if not verified
   const displayedNavItems = navItems.map(item => {
       if (item.view === View.Verified) {
           return user.isVerified 
-              ? { ...item, label: 'Verified' } // Change label if verified
-              : item; // Show "Get Verified" if not
+              ? { ...item, label: 'Verified' }
+              : item;
       }
       return item;
   });

@@ -1,4 +1,3 @@
-
 export enum View {
   Dashboard = 'Dashboard',
   Consent = 'Consent',
@@ -18,6 +17,7 @@ export interface UserProfile {
   address: string;
   isVerified: boolean;
   verificationStatus?: 'Verified' | 'Pending' | 'Unverified';
+  profilePictureUrl?: string;
 }
 
 export interface ConsentPreference {
@@ -41,8 +41,12 @@ export interface BusinessPartner {
 export interface Complaint {
   id: string;
   text: string;
-  status: 'submitted' | 'processing' | 'resolved';
+  status: 'submitted' | 'processing' | 'resolved' | 'pending-sync';
   submittedDate: string;
   category?: string;
   severity?: string;
+  businessInvolved?: string;
+  incidentDate?: string;
+  fileName?: string;
+  recommendations?: string[];
 }

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { UserProfile, View } from '../types';
 
@@ -27,9 +28,9 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, activeView }) => {
           <p className="text-sm text-gray-500">{user.email}</p>
         </div>
         <img
-          src={`https://i.pravatar.cc/150?u=${user.id}`}
+          src={user.profilePictureUrl || `https://i.pravatar.cc/150?u=${user.id}`}
           alt="User avatar"
-          className="w-12 h-12 rounded-full border-2 border-brand-primary"
+          className="w-12 h-12 rounded-full border-2 border-brand-primary object-cover"
         />
         <button
           onClick={onLogout}
