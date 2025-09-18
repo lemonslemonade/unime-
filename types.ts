@@ -59,3 +59,10 @@ export interface ToastMessage {
   message: string;
   type: ToastType;
 }
+
+export interface ActivityEvent {
+    id: string;
+    type: 'security' | 'profile' | 'consent' | 'sharing' | 'complaint';
+    description: string;
+    timestamp: string;
+}

@@ -1,30 +1,60 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { generateFeatureImage } from '../services/geminiService';
+import { useToast } from '../hooks/useToast';
 
-const FeatureCard: React.FC<{
+interface FeatureCardProps {
     title: string;
     description: string;
     icon: React.ReactNode;
     imageUrl?: string;
-}> = ({ title, description, icon, imageUrl }) => (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden">
-        <div className="h-40 w-full bg-gray-200 flex items-center justify-center relative">
-            {imageUrl ? (
-                <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
-            ) : (
-                <>
-                    <div className="absolute inset-0 bg-gray-300 animate-pulse" aria-hidden="true"></div>
-                    <div className="text-gray-500 z-10" aria-label="Loading image placeholder">{icon}</div>
-                </>
-            )}
+    onVisible: () => void;
+}
+
+const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon, imageUrl, onVisible }) => {
+    const cardRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    onVisible();
+                    observer.disconnect(); // Trigger only once
+                }
+            },
+            {
+                rootMargin: '0px',
+                threshold: 0.1, // Trigger when 10% of the card is visible
+            }
+        );
+
+        if (cardRef.current) {
+            observer.observe(cardRef.current);
+        }
+
+        return () => {
+            observer.disconnect();
+        };
+    }, [onVisible]);
+
+    return (
+        <div ref={cardRef} className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden">
+            <div className="h-40 w-full bg-gray-200 flex items-center justify-center relative">
+                {imageUrl ? (
+                    <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
+                ) : (
+                    <>
+                        <div className="absolute inset-0 bg-gray-300 animate-pulse" aria-hidden="true"></div>
+                        <div className="text-gray-500 z-10" aria-label="Loading image placeholder">{icon}</div>
+                    </>
+                )}
+            </div>
+            <div className="p-6 flex-grow">
+                <h3 className="text-xl font-bold text-brand-dark mb-2">{title}</h3>
+                <p className="text-gray-600">{description}</p>
+            </div>
         </div>
-        <div className="p-6 flex-grow">
-            <h3 className="text-xl font-bold text-brand-dark mb-2">{title}</h3>
-            <p className="text-gray-600">{description}</p>
-        </div>
-    </div>
-);
+    );
+};
 
 
 const features = [
@@ -66,28 +96,65 @@ const features = [
     }
 ];
 
+const CACHE_KEY = 'unime-for-business-images';
+
 const ForBusiness: React.FC = () => {
     const [images, setImages] = useState<Record<string, string>>({});
+    const [generating, setGenerating] = useState<Set<string>>(new Set());
+    const toast = useToast();
+    const generationFailedRef = useRef(false);
 
+    // Load images from cache on initial mount
     useEffect(() => {
-        const generateAllImagesSequentially = async () => {
-            for (const feature of features) {
-                try {
-                    const imageUrl = await generateFeatureImage(feature.prompt);
-                    if (imageUrl) {
-                        setImages(prevImages => ({
-                            ...prevImages,
-                            [feature.title]: imageUrl,
-                        }));
-                    }
-                } catch (error) {
-                    console.error(`Failed to generate image for "${feature.title}":`, error);
-                }
+        try {
+            const cachedData = localStorage.getItem(CACHE_KEY);
+            if (cachedData) {
+                setImages(JSON.parse(cachedData));
             }
-        };
-
-        generateAllImagesSequentially();
+        } catch (error) {
+            console.error("Failed to parse cached images:", error);
+            localStorage.removeItem(CACHE_KEY);
+        }
     }, []);
+
+    const handleGenerateImage = useCallback(async (title: string, prompt: string) => {
+        // Don't generate if already cached, already generating, or if a failure has already occurred
+        if (images[title] || generating.has(title) || generationFailedRef.current) {
+            return;
+        }
+
+        setGenerating(prev => new Set(prev).add(title));
+
+        try {
+            const imageUrl = await generateFeatureImage(prompt);
+            if (imageUrl) {
+                setImages(prevImages => {
+                    const newImages = { ...prevImages, [title]: imageUrl };
+                    localStorage.setItem(CACHE_KEY, JSON.stringify(newImages));
+                    return newImages;
+                });
+            } else {
+                // This 'else' block will be hit for rate limit errors, which return null from the service
+                if (!generationFailedRef.current) {
+                    toast.error('Image generation failed, likely due to API rate limits.');
+                    generationFailedRef.current = true;
+                }
+                console.warn(`Image generation failed for "${title}". Further generation is paused.`);
+            }
+        } catch (error) {
+             if (!generationFailedRef.current) {
+                toast.error('An unexpected error occurred during image generation.');
+                generationFailedRef.current = true;
+            }
+            console.error(`Error generating image for "${title}":`, error);
+        } finally {
+            setGenerating(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(title);
+                return newSet;
+            });
+        }
+    }, [images, generating, toast]);
 
     return (
         <div className="bg-brand-light">
@@ -109,6 +176,7 @@ const ForBusiness: React.FC = () => {
                             description={feature.description}
                             icon={feature.icon}
                             imageUrl={images[feature.title]}
+                            onVisible={() => handleGenerateImage(feature.title, feature.prompt)}
                         />
                     ))}
                 </div>

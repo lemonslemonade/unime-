@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, UserProfile, ConsentPreference } from './types';
-import { dbUsers, dbConsentPreferences } from './database/db';
+import { View, UserProfile, ConsentPreference, ActivityEvent } from './types';
+import { dbUsers, dbConsentPreferences, dbActivityLog } from './database/db';
 import { ToastProvider } from './contexts/ToastContext';
 import { useToast } from './hooks/useToast';
 import Login from './components/Login';
@@ -46,6 +46,7 @@ const AppContent: React.FC = () => {
   const [user, setUser] = useState<UserProfile>(dbUsers[0]);
   const [activeView, setActiveView] = useState<View>(View.Dashboard);
   const [consentPreferences, setConsentPreferences] = useState<ConsentPreference[]>(dbConsentPreferences);
+  const [activityLog, setActivityLog] = useState<ActivityEvent[]>(dbActivityLog);
   const toast = useToast();
 
   useEffect(() => {
@@ -96,7 +97,7 @@ const AppContent: React.FC = () => {
   const renderView = () => {
     switch (activeView) {
       case View.Dashboard:
-        return <Dashboard user={user} consentPreferences={consentPreferences} onProfilePictureUpdate={handleProfilePictureUpdate} onUserUpdate={handleUserUpdate} />;
+        return <Dashboard user={user} consentPreferences={consentPreferences} activityLog={activityLog} onProfilePictureUpdate={handleProfilePictureUpdate} onUserUpdate={handleUserUpdate} />;
       case View.Consent:
         return <Consent preferences={consentPreferences} onToggle={handleConsentToggle} />;
       case View.DataSharing:
@@ -110,7 +111,7 @@ const AppContent: React.FC = () => {
       case View.ForBusiness:
         return <ForBusiness />;
       default:
-        return <Dashboard user={user} consentPreferences={consentPreferences} onProfilePictureUpdate={handleProfilePictureUpdate} onUserUpdate={handleUserUpdate} />;
+        return <Dashboard user={user} consentPreferences={consentPreferences} activityLog={activityLog} onProfilePictureUpdate={handleProfilePictureUpdate} onUserUpdate={handleUserUpdate} />;
     }
   };
 

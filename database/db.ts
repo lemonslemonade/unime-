@@ -1,4 +1,4 @@
-import { UserProfile, ConsentPreference, BusinessPartner } from '../types';
+import { UserProfile, ConsentPreference, BusinessPartner, ActivityEvent } from '../types';
 
 export const dbUsers: UserProfile[] = [
   {
@@ -35,4 +35,13 @@ export const dbAvailablePartners: Omit<BusinessPartner, 'dataShared' | 'accessDa
   { id: '8', name: 'Data Dynamics Corp', logo: 'https://logo.clearbit.com/oracle.com', category: 'Enterprise Software' },
   { id: '9', name: 'AutoDrive Motors', logo: 'https://logo.clearbit.com/tesla.com', category: 'Automotive' },
   { id: '10', name: 'SkyHigh Airlines', logo: 'https://logo.clearbit.com/flysaa.com', category: 'Travel' },
+];
+
+export const dbActivityLog: ActivityEvent[] = [
+    { id: 'act-1', type: 'profile', description: 'Profile picture was updated.', timestamp: '2024-07-21T14:30:00Z' },
+    { id: 'act-2', type: 'security', description: 'Two-Factor Authentication was enabled.', timestamp: '2024-07-20T09:15:00Z' },
+    { id: 'act-3', type: 'consent', description: 'Consent opted-in for "Marketing emails" with Global Retail Inc.', timestamp: '2024-07-19T11:05:00Z' },
+    { id: 'act-4', type: 'sharing', description: 'Revoked data sharing access for FinSecure Bank.', timestamp: '2024-07-18T16:45:00Z' },
+    { id: 'act-5', type: 'complaint', description: 'New complaint submitted regarding "Marketing Spam".', timestamp: '2024-07-17T08:20:00Z' },
+    { id: 'act-6', type: 'profile', description: 'Profile information was successfully saved.', timestamp: '2024-07-16T12:00:00Z' },
 ];
