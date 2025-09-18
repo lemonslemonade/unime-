@@ -12,6 +12,7 @@ const viewTitles: Record<View, string> = {
   [View.Dashboard]: 'Profile Dashboard',
   [View.Consent]: 'Consent Controls',
   [View.DataSharing]: 'Data Sharing Overview',
+  [View.DataSharingAuditLog]: 'Data Sharing Audit Log',
   [View.Complaints]: 'Submit a Complaint',
   [View.Verified]: 'UniMe Verified',
   [View.ForBusiness]: 'For Businesses',

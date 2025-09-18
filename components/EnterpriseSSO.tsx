@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
 import Modal from './common/Modal';
+import { ssoConfig } from '../ssoConfig';
 
 interface EnterpriseSSOProps {
     user: UserProfile;
@@ -69,11 +70,6 @@ const EnterpriseSSO: React.FC<EnterpriseSSOProps> = ({ user }) => {
         });
     };
 
-    const partner = {
-        name: 'Global Retail Inc.',
-        logo: 'https://logo.clearbit.com/walmart.com',
-    };
-
     return (
         <div className="p-8 bg-brand-light min-h-full">
             <div className="text-center mb-12">
@@ -89,8 +85,8 @@ const EnterpriseSSO: React.FC<EnterpriseSSOProps> = ({ user }) => {
                     {ssoState === 'idle' && (
                          <div>
                             <div className="text-center">
-                                <img src={partner.logo} alt={`${partner.name} logo`} className="h-16 mx-auto mb-4"/>
-                                <h3 className="text-xl font-semibold text-gray-800">Welcome to {partner.name}</h3>
+                                <img src={ssoConfig.providerLogoUrl} alt={`${ssoConfig.providerName} logo`} className="h-16 mx-auto mb-4"/>
+                                <h3 className="text-xl font-semibold text-gray-800">Welcome to {ssoConfig.providerName}</h3>
                                 <p className="text-gray-500 mt-1">To continue to checkout, please sign in.</p>
                                 <button
                                     onClick={handleSignInClick}
@@ -135,7 +131,7 @@ const EnterpriseSSO: React.FC<EnterpriseSSOProps> = ({ user }) => {
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <h3 className="text-xl font-bold text-brand-dark">Authentication Successful!</h3>
-                            <p className="text-gray-600 mt-2">You are now signed in to {partner.name} as <span className="font-semibold">{user.firstName} {user.lastName}</span>.</p>
+                            <p className="text-gray-600 mt-2">You are now signed in to {ssoConfig.providerName} as <span className="font-semibold">{user.firstName} {user.lastName}</span>.</p>
                             <div className="text-left mt-4 bg-white p-4 rounded-md border text-sm max-w-md mx-auto">
                                 <p className="font-semibold mb-2">The following information was shared:</p>
                                 {activePermissions.length > 0 ? (
@@ -156,7 +152,7 @@ const EnterpriseSSO: React.FC<EnterpriseSSOProps> = ({ user }) => {
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <h3 className="text-xl font-bold text-brand-dark">Access Denied</h3>
-                            <p className="text-gray-600 mt-2">You cancelled the sign-in process for {partner.name}.</p>
+                            <p className="text-gray-600 mt-2">You cancelled the sign-in process for {ssoConfig.providerName}.</p>
                             <button onClick={handleReset} className="mt-6 bg-gray-500 text-white py-2 px-6 rounded-lg font-semibold hover:bg-gray-600 transition">Reset Demo</button>
                         </div>
                     )}
@@ -167,7 +163,7 @@ const EnterpriseSSO: React.FC<EnterpriseSSOProps> = ({ user }) => {
                 <div className="text-center">
                      <h1 className="text-2xl font-extrabold text-brand-dark">Uni<span className="text-brand-primary">Me</span></h1>
                      <p id="sso-modal-title" className="mt-4 text-xl font-semibold text-gray-800">
-                        <span className="font-bold text-brand-primary">{partner.name}</span> would like to connect to your account
+                        <span className="font-bold text-brand-primary">{ssoConfig.providerName}</span> would like to connect to your account
                      </p>
                      <p className="text-gray-500 mt-2">This will allow them to access the following information:</p>
                 </div>

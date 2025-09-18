@@ -2,6 +2,7 @@ export enum View {
   Dashboard = 'Dashboard',
   Consent = 'Consent',
   DataSharing = 'DataSharing',
+  DataSharingAuditLog = 'DataSharingAuditLog',
   Complaints = 'Complaints',
   Verified = 'Verified',
   ForBusiness = 'ForBusiness',
@@ -65,4 +66,14 @@ export interface ActivityEvent {
     type: 'security' | 'profile' | 'consent' | 'sharing' | 'complaint';
     description: string;
     timestamp: string;
+}
+
+export interface DataSharingEvent {
+    id: string;
+    businessName: string;
+    businessLogo: string;
+    dataShared: string[];
+    timestamp: string;
+    consentStatus: 'opted-in' | 'opted-out';
+    eventType: 'initial_share' | 'data_update' | 'access_revoked';
 }

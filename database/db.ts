@@ -1,4 +1,4 @@
-import { UserProfile, ConsentPreference, BusinessPartner, ActivityEvent } from '../types';
+import { UserProfile, ConsentPreference, BusinessPartner, ActivityEvent, DataSharingEvent } from '../types';
 
 export const dbUsers: UserProfile[] = [
   {
@@ -44,4 +44,13 @@ export const dbActivityLog: ActivityEvent[] = [
     { id: 'act-4', type: 'sharing', description: 'Revoked data sharing access for FinSecure Bank.', timestamp: '2024-07-18T16:45:00Z' },
     { id: 'act-5', type: 'complaint', description: 'New complaint submitted regarding "Marketing Spam".', timestamp: '2024-07-17T08:20:00Z' },
     { id: 'act-6', type: 'profile', description: 'Profile information was successfully saved.', timestamp: '2024-07-16T12:00:00Z' },
+];
+
+export const dbDataSharingLog: DataSharingEvent[] = [
+    { id: 'log-1', businessName: 'Global Retail Inc.', businessLogo: 'https://logo.clearbit.com/walmart.com', dataShared: ['Name', 'Email', 'Purchase History'], timestamp: '2024-07-20T10:00:00Z', consentStatus: 'opted-in', eventType: 'initial_share' },
+    { id: 'log-2', businessName: 'Sportify Gear', businessLogo: 'https://logo.clearbit.com/nike.com', dataShared: ['Email'], timestamp: '2024-07-19T11:30:00Z', consentStatus: 'opted-in', eventType: 'data_update' },
+    { id: 'log-3', businessName: 'FinSecure Bank', businessLogo: 'https://logo.clearbit.com/standardbank.com', dataShared: ['Name', 'Email', 'Address', 'Phone'], timestamp: '2024-07-18T16:45:00Z', consentStatus: 'opted-out', eventType: 'access_revoked' },
+    { id: 'log-4', businessName: 'AgriConnect SA', businessLogo: 'https://logo.clearbit.com/deere.com', dataShared: ['Name', 'Phone'], timestamp: '2024-07-15T09:00:00Z', consentStatus: 'opted-in', eventType: 'data_update' },
+    { id: 'log-5', businessName: 'Sportify Gear', businessLogo: 'https://logo.clearbit.com/nike.com', dataShared: ['Name', 'Email'], timestamp: '2024-07-12T14:00:00Z', consentStatus: 'opted-in', eventType: 'initial_share' },
+    { id: 'log-6', businessName: 'FinSecure Bank', businessLogo: 'https://logo.clearbit.com/standardbank.com', dataShared: ['Name', 'Email', 'Address', 'Phone'], timestamp: '2024-07-10T18:00:00Z', consentStatus: 'opted-in', eventType: 'initial_share' },
 ];

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, UserProfile, ConsentPreference, ActivityEvent } from './types';
-import { dbUsers, dbConsentPreferences, dbActivityLog } from './database/db';
+import { View, UserProfile, ConsentPreference, ActivityEvent, DataSharingEvent } from './types';
+import { dbUsers, dbConsentPreferences, dbActivityLog, dbDataSharingLog } from './database/db';
 import { ToastProvider } from './contexts/ToastContext';
 import { useToast } from './hooks/useToast';
 import Login from './components/Login';
@@ -8,6 +8,7 @@ import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import Consent from './components/Consent';
 import DataSharing from './components/DataSharing';
+import DataSharingAuditLog from './components/DataSharingAuditLog';
 import Complaints from './components/Complaints';
 import Verified from './components/Verified';
 import ForBusiness from './components/ForBusiness';
@@ -20,6 +21,7 @@ import ComplaintIcon from './components/icons/ComplaintIcon';
 import VerifiedIcon from './components/icons/VerifiedIcon';
 import BusinessIcon from './components/icons/BusinessIcon';
 import SSOIcon from './components/icons/SSOIcon';
+import AuditLogIcon from './components/icons/AuditLogIcon';
 
 const NavItem: React.FC<{
   icon: React.ReactNode;
@@ -47,6 +49,7 @@ const AppContent: React.FC = () => {
   const [activeView, setActiveView] = useState<View>(View.Dashboard);
   const [consentPreferences, setConsentPreferences] = useState<ConsentPreference[]>(dbConsentPreferences);
   const [activityLog, setActivityLog] = useState<ActivityEvent[]>(dbActivityLog);
+  const [dataSharingLog, setDataSharingLog] = useState<DataSharingEvent[]>(dbDataSharingLog);
   const toast = useToast();
 
   useEffect(() => {
@@ -102,6 +105,8 @@ const AppContent: React.FC = () => {
         return <Consent preferences={consentPreferences} onToggle={handleConsentToggle} />;
       case View.DataSharing:
         return <DataSharing />;
+      case View.DataSharingAuditLog:
+        return <DataSharingAuditLog log={dataSharingLog} />;
       case View.Complaints:
         return <Complaints />;
       case View.Verified:
@@ -123,6 +128,7 @@ const AppContent: React.FC = () => {
     { view: View.Dashboard, label: 'Dashboard', icon: <DashboardIcon /> },
     { view: View.Consent, label: 'Consent', icon: <ConsentIcon /> },
     { view: View.DataSharing, label: 'Data Sharing', icon: <DataSharingIcon /> },
+    { view: View.DataSharingAuditLog, label: 'Audit Log', icon: <AuditLogIcon /> },
     { view: View.Complaints, label: 'Complaints', icon: <ComplaintIcon /> },
     { view: View.Verified, label: 'Get Verified', icon: <VerifiedIcon /> },
     { view: View.EnterpriseSSO, label: 'Enterprise SSO', icon: <SSOIcon /> },
