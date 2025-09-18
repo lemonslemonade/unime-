@@ -18,10 +18,11 @@ export interface UserProfile {
   isVerified: boolean;
   verificationStatus?: 'Verified' | 'Pending' | 'Unverified';
   profilePictureUrl?: string;
+  is2FAEnabled: boolean;
 }
 
 export interface ConsentPreference {
-  id: string;
+  id:string;
   businessName: string;
   businessLogo: string;
   purpose: string;
@@ -49,4 +50,12 @@ export interface Complaint {
   incidentDate?: string;
   fileName?: string;
   recommendations?: string[];
+}
+
+export type ToastType = 'success' | 'error' | 'info';
+
+export interface ToastMessage {
+  id: number;
+  message: string;
+  type: ToastType;
 }

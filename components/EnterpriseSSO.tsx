@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
+import Modal from './common/Modal';
 
 interface EnterpriseSSOProps {
     user: UserProfile;
@@ -10,7 +10,6 @@ type PermissionKey = 'name' | 'email' | 'address';
 
 const EnterpriseSSO: React.FC<EnterpriseSSOProps> = ({ user }) => {
     const [showModal, setShowModal] = useState(false);
-    const [isModalVisible, setIsModalVisible] = useState(false);
     const [ssoState, setSsoState] = useState<'idle' | 'success' | 'denied'>('idle');
     const [permissionError, setPermissionError] = useState<string | null>(null);
 
@@ -25,17 +24,6 @@ const EnterpriseSSO: React.FC<EnterpriseSSOProps> = ({ user }) => {
         email: true,
         address: true,
     });
-
-    useEffect(() => {
-        if (showModal) {
-            // A short delay is needed to allow the DOM to update before the transition starts.
-            const timer = setTimeout(() => {
-                setIsModalVisible(true);
-            }, 10);
-            return () => clearTimeout(timer);
-        }
-    }, [showModal]);
-
 
     const handlePermissionToggle = (permission: PermissionKey) => {
         if (permissionError) {
@@ -62,19 +50,13 @@ const EnterpriseSSO: React.FC<EnterpriseSSOProps> = ({ user }) => {
     };
     
     const handleAllow = () => {
-        setIsModalVisible(false);
-        setTimeout(() => {
-            setShowModal(false);
-            setSsoState('success');
-        }, 300); // Corresponds to animation duration
+        setShowModal(false);
+        setSsoState('success');
     };
 
     const handleDeny = () => {
-        setIsModalVisible(false);
-        setTimeout(() => {
-            setShowModal(false);
-            setSsoState('denied');
-        }, 300); // Corresponds to animation duration
+        setShowModal(false);
+        setSsoState('denied');
     };
 
     const handleReset = () => {
@@ -181,54 +163,49 @@ const EnterpriseSSO: React.FC<EnterpriseSSOProps> = ({ user }) => {
                 </div>
             </div>
 
-            {showModal && (
-                <div className={`fixed inset-0 bg-black flex items-center justify-center z-50 p-4 transition-opacity duration-300 ease-in-out ${isModalVisible ? 'bg-opacity-60' : 'bg-opacity-0'}`} role="dialog" aria-modal="true" aria-labelledby="sso-modal-title">
-                    <div className={`bg-white rounded-2xl shadow-2xl w-full max-w-lg transform transition-all duration-300 ease-in-out ${isModalVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`} >
-                        <div className="p-8">
-                            <div className="text-center">
-                                 <h1 className="text-2xl font-extrabold text-brand-dark">Uni<span className="text-brand-primary">Me</span></h1>
-                                 <p id="sso-modal-title" className="mt-4 text-xl font-semibold text-gray-800">
-                                    <span className="font-bold text-brand-primary">{partner.name}</span> would like to connect to your account
-                                 </p>
-                                 <p className="text-gray-500 mt-2">This will allow them to access the following information:</p>
-                            </div>
-                            
-                            <div className="mt-6 space-y-4">
-                                {activePermissions.length > 0 ? (
-                                     activePermissions.map(perm => (
-                                        <div key={perm.id} className="flex items-start p-3 bg-brand-light rounded-lg">
-                                            <div className="flex-shrink-0 h-6 w-6 rounded-full bg-green-100 text-brand-success flex items-center justify-center mt-1">
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                            </div>
-                                            <div className="ml-4 flex-grow">
-                                                <p className="font-semibold text-brand-dark">{perm.label}</p>
-                                                <p className="text-sm text-gray-600">{perm.value}</p>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="text-center p-4 bg-yellow-50 text-yellow-800 rounded-lg">
-                                        You must select at least one piece of information to share.
-                                    </div>
-                                )}
-                            </div>
-                            <div className="mt-2 text-center text-xs text-gray-400">
-                                By clicking "Allow", you agree to share this data.
-                            </div>
-                        </div>
-                        <div className="bg-gray-50 px-8 py-4 rounded-b-2xl grid grid-cols-2 gap-4">
-                            <button onClick={handleDeny} className="py-3 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition">Deny</button>
-                            <button 
-                                onClick={handleAllow}
-                                disabled={activePermissions.length === 0}
-                                className="py-3 px-4 bg-brand-primary text-white font-semibold rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
-                            >
-                                Allow
-                            </button>
-                        </div>
-                    </div>
+            <Modal isOpen={showModal} onClose={handleDeny} title="">
+                <div className="text-center">
+                     <h1 className="text-2xl font-extrabold text-brand-dark">Uni<span className="text-brand-primary">Me</span></h1>
+                     <p id="sso-modal-title" className="mt-4 text-xl font-semibold text-gray-800">
+                        <span className="font-bold text-brand-primary">{partner.name}</span> would like to connect to your account
+                     </p>
+                     <p className="text-gray-500 mt-2">This will allow them to access the following information:</p>
                 </div>
-            )}
+                
+                <div className="mt-6 space-y-4">
+                    {activePermissions.length > 0 ? (
+                         activePermissions.map(perm => (
+                            <div key={perm.id} className="flex items-start p-3 bg-brand-light rounded-lg">
+                                <div className="flex-shrink-0 h-6 w-6 rounded-full bg-green-100 text-brand-success flex items-center justify-center mt-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                                </div>
+                                <div className="ml-4 flex-grow">
+                                    <p className="font-semibold text-brand-dark">{perm.label}</p>
+                                    <p className="text-sm text-gray-600">{perm.value}</p>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-center p-4 bg-yellow-50 text-yellow-800 rounded-lg">
+                            You must select at least one piece of information to share.
+                        </div>
+                    )}
+                </div>
+                <div className="mt-2 text-center text-xs text-gray-400">
+                    By clicking "Allow", you agree to share this data.
+                </div>
+
+                <div className="mt-6 grid grid-cols-2 gap-4">
+                    <button onClick={handleDeny} className="py-3 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition">Deny</button>
+                    <button 
+                        onClick={handleAllow}
+                        disabled={activePermissions.length === 0}
+                        className="py-3 px-4 bg-brand-primary text-white font-semibold rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                        Allow
+                    </button>
+                </div>
+            </Modal>
         </div>
     );
 };

@@ -1,11 +1,14 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, ConsentPreference } from '../types';
+import { useToast } from '../hooks/useToast';
+import Modal from './common/Modal';
+import QrCodeIcon from './icons/QrCodeIcon';
 
 interface DashboardProps {
   user: UserProfile;
   consentPreferences: ConsentPreference[];
   onProfilePictureUpdate: (base64: string) => void;
+  onUserUpdate: (updatedFields: Partial<UserProfile>) => void;
 }
 
 const VerificationBadge: React.FC<{ status?: 'Verified' | 'Pending' | 'Unverified' }> = ({ status }) => {
@@ -65,17 +68,28 @@ const SkeletonLoader: React.FC = () => (
 );
 
 
-const Dashboard: React.FC<DashboardProps> = ({ user, consentPreferences, onProfilePictureUpdate }) => {
+const Dashboard: React.FC<DashboardProps> = ({ user, consentPreferences, onProfilePictureUpdate, onUserUpdate }) => {
   const [profile, setProfile] = useState<UserProfile>(user);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
+  const [isDisable2FAModalOpen, setIsDisable2FAModalOpen] = useState(false);
+  const [twoFACode, setTwoFACode] = useState('');
+  const [twoFAError, setTwoFAError] = useState('');
+  const [greeting, setGreeting] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const toast = useToast();
 
   useEffect(() => {
     const timer = setTimeout(() => {
         setIsLoading(false);
     }, 1500);
+    const hours = new Date().getHours();
+    if (hours < 12) setGreeting('Good morning');
+    else if (hours < 18) setGreeting('Good afternoon');
+    else setGreeting('Good evening');
+    
     return () => clearTimeout(timer);
   }, []);
 
@@ -85,18 +99,19 @@ const Dashboard: React.FC<DashboardProps> = ({ user, consentPreferences, onProfi
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setProfile(prev => ({ ...prev, [name]: value }));
+    setProfile(prev => ({ ...prev, [name]: value } as UserProfile));
   };
 
   const handleSave = () => {
-    console.log('Saving profile:', profile);
+    onUserUpdate(profile);
     setIsEditing(false);
+    toast.success('Profile saved successfully!');
   };
   
   const handleDeleteAccount = () => {
     console.log(`Account deletion requested for user: ${profile.id}`);
     setIsDeleteModalOpen(false);
-    alert('Account has been deleted. You will now be logged out.');
+    toast.success('Your account has been deleted.');
   };
 
   const handleUploadClick = () => {
@@ -120,18 +135,35 @@ const Dashboard: React.FC<DashboardProps> = ({ user, consentPreferences, onProfi
       profile: user,
       consentPreferences: consentPreferences,
     };
-
-    const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
-      JSON.stringify(exportData, null, 2)
-    )}`;
-    
+    const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(exportData, null, 2))}`;
     const link = document.createElement("a");
     link.href = jsonString;
     link.download = `unime_data_${user.id}.json`;
-
     link.click();
+    toast.success('Data export started successfully!');
   };
 
+  const handleEnable2FA = () => {
+    setTwoFACode('');
+    setTwoFAError('');
+    setIs2FAModalOpen(true);
+  };
+
+  const handle2FASetup = () => {
+    if (twoFACode.length !== 6 || !/^\d{6}$/.test(twoFACode)) {
+        setTwoFAError('Please enter a valid 6-digit code.');
+        return;
+    }
+    onUserUpdate({ is2FAEnabled: true });
+    setIs2FAModalOpen(false);
+    toast.success('Two-Factor Authentication has been enabled.');
+  };
+
+  const handleDisable2FAConfirm = () => {
+    onUserUpdate({ is2FAEnabled: false });
+    setIsDisable2FAModalOpen(false);
+    toast.info('Two-Factor Authentication has been disabled.');
+  };
 
   if (isLoading) {
     return <SkeletonLoader />;
@@ -140,6 +172,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, consentPreferences, onProfi
   return (
     <div className="p-8 space-y-8">
       <div className="bg-white p-6 rounded-lg shadow-md">
+         <div className="mb-6">
+            <h2 className="text-3xl font-bold text-brand-dark">{greeting}, {profile.firstName}!</h2>
+            <p className="text-gray-500">Welcome back to your UniMe dashboard.</p>
+        </div>
         <div className="flex justify-between items-center mb-6">
            <div className="flex items-center">
             <div className="relative group">
@@ -275,47 +311,145 @@ const Dashboard: React.FC<DashboardProps> = ({ user, consentPreferences, onProfi
           </div>
         </div>
       </div>
-       {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-                <div className="p-6">
-                    <div className="flex items-start">
-                        <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                            <svg className="h-6 w-6 text-brand-danger" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                        </div>
-                        <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left flex-grow">
-                            <h3 className="text-lg leading-6 font-bold text-gray-900" id="delete-modal-title">
-                                Delete Account
-                            </h3>
-                            <div className="mt-2">
-                                <p className="text-sm text-gray-600">
-                                    Are you sure you want to delete your account? All of your data will be permanently removed. This action cannot be undone.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-lg">
-                    <button
-                        type="button"
-                        onClick={handleDeleteAccount}
-                        className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-brand-danger text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
-                    >
-                        Yes, Delete My Account
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setIsDeleteModalOpen(false)}
-                        className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                    >
-                        Cancel
-                    </button>
-                </div>
+       <div className="bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-xl font-bold text-brand-dark mb-4">Security Settings</h3>
+          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+              <div>
+                  <h4 className="font-semibold text-gray-800">Two-Factor Authentication (2FA)</h4>
+                  <p className="text-sm text-gray-500">
+                      Add an extra layer of security to your account.
+                  </p>
+              </div>
+              <div className="flex items-center space-x-3">
+                  <span className={`px-3 py-1 text-sm font-semibold rounded-full leading-none ${profile.is2FAEnabled ? 'bg-brand-success/20 text-brand-success' : 'bg-gray-200 text-gray-800'}`}>
+                      {profile.is2FAEnabled ? 'Enabled' : 'Disabled'}
+                  </span>
+                  {profile.is2FAEnabled ? (
+                      <button 
+                          onClick={() => setIsDisable2FAModalOpen(true)}
+                          className="bg-brand-danger text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm font-medium"
+                      >
+                          Disable
+                      </button>
+                  ) : (
+                      <button 
+                          onClick={handleEnable2FA}
+                          className="bg-brand-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+                      >
+                          Enable
+                      </button>
+                  )}
+              </div>
+          </div>
+      </div>
+       <Modal 
+        isOpen={isDeleteModalOpen} 
+        onClose={() => setIsDeleteModalOpen(false)} 
+        title="Delete Account"
+        titleIcon={
+             <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                <svg className="h-6 w-6 text-brand-danger" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
             </div>
+        }
+       >
+            <p className="text-sm text-gray-600">
+                Are you sure you want to delete your account? All of your data will be permanently removed. This action cannot be undone.
+            </p>
+            <div className="mt-6 flex justify-end space-x-3">
+                <button
+                    type="button"
+                    onClick={() => setIsDeleteModalOpen(false)}
+                    className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                    Cancel
+                </button>
+                 <button
+                    type="button"
+                    onClick={handleDeleteAccount}
+                    className="px-4 py-2 bg-brand-danger text-white border border-transparent rounded-md hover:bg-red-700"
+                >
+                    Yes, Delete My Account
+                </button>
+            </div>
+       </Modal>
+        <Modal isOpen={is2FAModalOpen} onClose={() => setIs2FAModalOpen(false)} title="Set Up Two-Factor Authentication">
+          <div className="text-center">
+              <p className="text-sm text-gray-600 mb-4">
+                  1. Scan this QR code with your authenticator app (e.g., Google Authenticator, Authy).
+              </p>
+              <div className="flex justify-center my-4">
+                  <QrCodeIcon />
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                  2. Enter the 6-digit code generated by your app.
+              </p>
+              <div className="w-full max-w-xs mx-auto">
+                <input
+                    type="text"
+                    value={twoFACode}
+                    onChange={(e) => {
+                        setTwoFAError('');
+                        setTwoFACode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6));
+                    }}
+                    placeholder="123456"
+                    className={`w-full text-center text-2xl tracking-[.2em] p-3 border ${twoFAError ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-brand-primary focus:border-brand-primary`}
+                    maxLength={6}
+                />
+                {twoFAError && <p className="text-red-500 text-xs mt-2">{twoFAError}</p>}
+              </div>
+          </div>
+          <div className="mt-6 flex justify-end space-x-3">
+              <button
+                  type="button"
+                  onClick={() => setIs2FAModalOpen(false)}
+                  className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                  Cancel
+              </button>
+              <button
+                  type="button"
+                  onClick={handle2FASetup}
+                  className="px-4 py-2 bg-brand-success text-white border border-transparent rounded-md hover:bg-green-600"
+              >
+                  Verify & Enable
+              </button>
+          </div>
+      </Modal>
+
+      <Modal 
+        isOpen={isDisable2FAModalOpen} 
+        onClose={() => setIsDisable2FAModalOpen(false)} 
+        title="Disable Two-Factor Authentication?"
+        titleIcon={
+             <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                <svg className="h-6 w-6 text-brand-danger" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+        }
+      >
+        <p className="text-sm text-gray-600">
+            Disabling 2FA will reduce the security of your account. We recommend keeping it enabled. Are you sure you want to proceed?
+        </p>
+        <div className="mt-6 flex justify-end space-x-3">
+             <button
+                type="button"
+                onClick={() => setIsDisable2FAModalOpen(false)}
+                className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+                Cancel
+            </button>
+            <button
+                type="button"
+                onClick={handleDisable2FAConfirm}
+                className="px-4 py-2 bg-brand-danger text-white border border-transparent rounded-md hover:bg-red-700"
+            >
+                Yes, Disable 2FA
+            </button>
         </div>
-      )}
+      </Modal>
     </div>
   );
 };

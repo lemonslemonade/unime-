@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface LoginProps {
   onLogin: () => void;
@@ -8,9 +8,35 @@ interface LoginProps {
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   type View = 'login' | 'signup' | 'forgotPassword' | 'resetConfirmation' | '2fa';
   const [view, setView] = useState<View>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [emailError, setEmailError] = useState('');
+
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    if (savedEmail) {
+        setEmail(savedEmail);
+        setRememberMe(true);
+    }
+  }, []);
+
+  const validateEmail = (emailToValidate: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToValidate);
 
   const handlePrimaryAction = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateEmail(email)) {
+        setEmailError('Please enter a valid email address.');
+        return;
+    }
+
+    if (view === 'login') {
+        if (rememberMe) {
+            localStorage.setItem('rememberedEmail', email);
+        } else {
+            localStorage.removeItem('rememberedEmail');
+        }
+    }
     if (view === 'login' || view === 'signup') {
         setView('2fa');
     }
@@ -23,8 +49,22 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   const handleForgotPasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateEmail(email)) {
+        setEmailError('Please enter a valid email address.');
+        return;
+    }
     setView('resetConfirmation');
   };
+  
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (emailError) setEmailError('');
+    setEmail(e.target.value);
+  }
+
+  const handleViewChange = (newView: View) => {
+      setEmailError('');
+      setView(newView);
+  }
 
 
   return (
@@ -41,17 +81,33 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     <h2 className="text-2xl font-bold text-center text-gray-800">{view === 'login' ? 'Welcome Back' : 'Create Account'}</h2>
                     
                     <div className="relative pt-2">
-                        <input type="email" placeholder="Email Address" required className="peer h-10 w-full border-b-2 border-gray-300 text-gray-900 placeholder-transparent focus:outline-none focus:border-brand-primary" />
+                        <input type="email" placeholder="Email Address" required className={`peer h-10 w-full border-b-2 text-gray-900 placeholder-transparent focus:outline-none ${emailError ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-brand-primary'}`} value={email} onChange={handleEmailChange} />
                         <label className="absolute left-0 -top-3.5 text-gray-600 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-gray-600 peer-focus:text-sm">Email Address</label>
+                        {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
                     </div>
                     <div className="relative pt-2">
-                        <input type="password" placeholder="Password" required className="peer h-10 w-full border-b-2 border-gray-300 text-gray-900 placeholder-transparent focus:outline-none focus:border-brand-primary" />
+                        <input type="password" placeholder="Password" required className="peer h-10 w-full border-b-2 border-gray-300 text-gray-900 placeholder-transparent focus:outline-none focus:border-brand-primary" value={password} onChange={(e) => setPassword(e.target.value)} />
                         <label className="absolute left-0 -top-3.5 text-gray-600 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-gray-600 peer-focus:text-sm">Password</label>
                     </div>
                     
-                    <div className="text-right h-5">
+                    <div className="flex items-center justify-between h-5">
+                       {view === 'login' ? (
+                           <div className="flex items-center">
+                               <input
+                                   id="remember-me"
+                                   name="remember-me"
+                                   type="checkbox"
+                                   checked={rememberMe}
+                                   onChange={(e) => setRememberMe(e.target.checked)}
+                                   className="h-4 w-4 text-brand-primary focus:ring-brand-primary border-gray-300 rounded"
+                               />
+                               <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-600">
+                                   Remember me
+                               </label>
+                           </div>
+                       ) : <span />}
                        {view === 'login' && (
-                            <button type="button" onClick={() => setView('forgotPassword')} className="text-sm font-semibold text-brand-primary hover:underline">
+                            <button type="button" onClick={() => handleViewChange('forgotPassword')} className="text-sm font-semibold text-brand-primary hover:underline">
                                 Forgot Password?
                             </button>
                         )}
@@ -68,7 +124,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     
                     <p className="text-center text-sm text-gray-500">
                         {view === 'login' ? "Don't have an account?" : "Already have an account?"}
-                        <button type="button" onClick={() => setView(view === 'login' ? 'signup' : 'login')} className="font-semibold text-brand-primary hover:underline ml-1">
+                        <button type="button" onClick={() => handleViewChange(view === 'login' ? 'signup' : 'login')} className="font-semibold text-brand-primary hover:underline ml-1">
                             {view === 'login' ? 'Sign up' : 'Log in'}
                         </button>
                     </p>
@@ -112,11 +168,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 <h2 className="text-2xl font-bold text-center text-gray-800">Reset Password</h2>
                 <p className="text-center text-sm text-gray-500">Enter your email and we'll send a link to get back into your account.</p>
                 <div className="relative pt-2">
-                    <input type="email" placeholder="Email Address" required className="peer h-10 w-full border-b-2 border-gray-300 text-gray-900 placeholder-transparent focus:outline-none focus:border-brand-primary" />
+                    <input type="email" placeholder="Email Address" required className={`peer h-10 w-full border-b-2 text-gray-900 placeholder-transparent focus:outline-none ${emailError ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-brand-primary'}`} value={email} onChange={handleEmailChange} />
                     <label className="absolute left-0 -top-3.5 text-gray-600 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-gray-600 peer-focus:text-sm">Email Address</label>
+                    {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
                 </div>
                 <button type="submit" className="w-full bg-brand-primary text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">Send Reset Link</button>
-                <button type="button" onClick={() => setView('login')} className="w-full text-center text-sm text-gray-500 hover:underline">Back to Login</button>
+                <button type="button" onClick={() => handleViewChange('login')} className="w-full text-center text-sm text-gray-500 hover:underline">Back to Login</button>
             </form>
         ) : view === 'resetConfirmation' ? (
             <div className="text-center space-y-6">
@@ -125,7 +182,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 </svg>
                 <h2 className="text-2xl font-bold text-center text-gray-800">Check Your Email</h2>
                 <p className="text-center text-gray-600">If an account exists for the email provided, you will receive a password reset link shortly.</p>
-                <button type="button" onClick={() => setView('login')} className="w-full bg-brand-primary text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">Back to Login</button>
+                <button type="button" onClick={() => handleViewChange('login')} className="w-full bg-brand-primary text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">Back to Login</button>
             </div>
         ) : view === '2fa' ? (
              <form className="space-y-6" onSubmit={handle2FASubmit}>
@@ -139,7 +196,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 </div>
 
                 <button type="submit" className="w-full bg-brand-success text-white py-3 rounded-lg font-semibold hover:bg-green-600 transition">Verify</button>
-                <button type="button" onClick={() => setView('login')} className="w-full text-center text-sm text-gray-500 hover:underline">Back to Login</button>
+                <button type="button" onClick={() => handleViewChange('login')} className="w-full text-center text-sm text-gray-500 hover:underline">Back to Login</button>
             </form>
         ) : null}
       </div>

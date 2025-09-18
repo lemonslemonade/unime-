@@ -1,10 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import { config } from '../config';
 
-if (!process.env.API_KEY) {
-  throw new Error("API_KEY environment variable not set");
-}
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: config.apiKey });
 
 const complaintAnalysisSchema = {
   type: Type.OBJECT,

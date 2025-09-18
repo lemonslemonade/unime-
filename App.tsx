@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, UserProfile, ConsentPreference } from './types';
 import { dbUsers, dbConsentPreferences } from './database/db';
+import { ToastProvider } from './contexts/ToastContext';
+import { useToast } from './hooks/useToast';
 import Login from './components/Login';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
@@ -10,6 +12,7 @@ import Complaints from './components/Complaints';
 import Verified from './components/Verified';
 import ForBusiness from './components/ForBusiness';
 import EnterpriseSSO from './components/EnterpriseSSO';
+import ToastContainer from './components/common/ToastContainer';
 import DashboardIcon from './components/icons/DashboardIcon';
 import ConsentIcon from './components/icons/ConsentIcon';
 import DataSharingIcon from './components/icons/DataSharingIcon';
@@ -38,11 +41,12 @@ const NavItem: React.FC<{
   </button>
 );
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<UserProfile>(dbUsers[0]);
   const [activeView, setActiveView] = useState<View>(View.Dashboard);
   const [consentPreferences, setConsentPreferences] = useState<ConsentPreference[]>(dbConsentPreferences);
+  const toast = useToast();
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -54,7 +58,10 @@ const App: React.FC = () => {
   }, [isLoggedIn, user.id]);
 
   const handleLogin = () => setIsLoggedIn(true);
-  const handleLogout = () => setIsLoggedIn(false);
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    localStorage.removeItem('rememberedEmail');
+  };
 
   const handleVerificationSuccess = () => {
     setUser(currentUser => ({
@@ -63,11 +70,17 @@ const App: React.FC = () => {
       verificationStatus: 'Verified',
     }));
     setActiveView(View.Dashboard);
+    toast.success('Your account has been successfully verified!');
   };
   
   const handleProfilePictureUpdate = (newPicture: string) => {
     setUser(prevUser => ({ ...prevUser, profilePictureUrl: newPicture }));
     localStorage.setItem(`profilePicture-${user.id}`, newPicture);
+    toast.success('Profile picture updated successfully!');
+  };
+
+  const handleUserUpdate = (updatedFields: Partial<UserProfile>) => {
+    setUser(currentUser => ({...currentUser, ...updatedFields}));
   };
   
   const handleConsentToggle = (id: string) => {
@@ -83,7 +96,7 @@ const App: React.FC = () => {
   const renderView = () => {
     switch (activeView) {
       case View.Dashboard:
-        return <Dashboard user={user} consentPreferences={consentPreferences} onProfilePictureUpdate={handleProfilePictureUpdate} />;
+        return <Dashboard user={user} consentPreferences={consentPreferences} onProfilePictureUpdate={handleProfilePictureUpdate} onUserUpdate={handleUserUpdate} />;
       case View.Consent:
         return <Consent preferences={consentPreferences} onToggle={handleConsentToggle} />;
       case View.DataSharing:
@@ -97,7 +110,7 @@ const App: React.FC = () => {
       case View.ForBusiness:
         return <ForBusiness />;
       default:
-        return <Dashboard user={user} consentPreferences={consentPreferences} onProfilePictureUpdate={handleProfilePictureUpdate} />;
+        return <Dashboard user={user} consentPreferences={consentPreferences} onProfilePictureUpdate={handleProfilePictureUpdate} onUserUpdate={handleUserUpdate} />;
     }
   };
 
@@ -154,5 +167,12 @@ const App: React.FC = () => {
     </div>
   );
 };
+
+const App: React.FC = () => (
+    <ToastProvider>
+        <AppContent />
+        <ToastContainer />
+    </ToastProvider>
+);
 
 export default App;

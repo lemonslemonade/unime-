@@ -10,6 +10,7 @@ export const dbUsers: UserProfile[] = [
     address: '123 Main Street, Cape Town, 8001',
     isVerified: false,
     verificationStatus: 'Unverified',
+    is2FAEnabled: false,
   }
 ];
 
