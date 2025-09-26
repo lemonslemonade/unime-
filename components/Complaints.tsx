@@ -85,6 +85,7 @@ const Complaints: React.FC = () => {
     const [filteredBusinesses, setFilteredBusinesses] = useState<string[]>([]);
     const [isBusinessDropdownOpen, setIsBusinessDropdownOpen] = useState(false);
     const [attachedFile, setAttachedFile] = useState<File | null>(null);
+    const [attachedFileContent, setAttachedFileContent] = useState<{mimeType: string; data: string} | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<ComplaintAnalysis | null>(null);
     const [apiError, setApiError] = useState<string | null>(null);
@@ -187,12 +188,31 @@ const Complaints: React.FC = () => {
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
-            setAttachedFile(e.target.files[0]);
+            const file = e.target.files[0];
+            setAttachedFile(file);
+
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = (reader.result as string)?.split(',')[1];
+                if (base64String) {
+                    setAttachedFileContent({
+                        mimeType: file.type,
+                        data: base64String,
+                    });
+                }
+            };
+            reader.onerror = () => {
+                console.error("Error reading file");
+                toast.error("Could not read the selected file.");
+                handleRemoveFile();
+            }
+            reader.readAsDataURL(file);
         }
     };
     
     const handleRemoveFile = () => {
         setAttachedFile(null);
+        setAttachedFileContent(null);
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -243,7 +263,7 @@ const Complaints: React.FC = () => {
             if (businessInvolved.trim()) fullComplaintDetails += `\nBusiness Involved: ${businessInvolved.trim()}`;
             if (incidentDate) fullComplaintDetails += `\nDate of Incident: ${incidentDate}`;
             
-            const result = await categorizeComplaint(fullComplaintDetails, selectedCategory);
+            const result = await categorizeComplaint(fullComplaintDetails, selectedCategory, attachedFileContent);
             setIsLoading(false);
             
             if (result) {
@@ -272,10 +292,7 @@ const Complaints: React.FC = () => {
         setSelectedCategory('');
         setIncidentDate('');
         setBusinessInvolved('');
-        setAttachedFile(null);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
+        handleRemoveFile();
         setAnalysisResult(null);
         setApiError(null);
         setValidationError(null);

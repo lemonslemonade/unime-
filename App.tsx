@@ -13,6 +13,7 @@ import DataSharingAuditLog from './components/DataSharingAuditLog';
 import Complaints from './components/Complaints';
 import WildcardMarketing from './components/WildcardMarketing';
 import Verified from './components/Verified';
+import EnterpriseSSO from './components/EnterpriseSSO';
 import CustomerDetails from './components/BusinessDashboard';
 import CompanyHome from './components/CompanyHome';
 import CustomerDataIssues from './components/CustomerDataIssues';
@@ -29,6 +30,7 @@ import ComplaintIcon from './components/icons/ComplaintIcon';
 import WildcardMarketingIcon from './components/icons/WildcardMarketingIcon';
 import VerifiedIcon from './components/icons/VerifiedIcon';
 import AuditLogIcon from './components/icons/AuditLogIcon';
+import SSOIcon from './components/icons/SSOIcon';
 import OnboardingModal from './components/common/OnboardingModal';
 import Onboarding from './components/Onboarding';
 import { tourSteps } from './tourSteps';
@@ -256,6 +258,8 @@ const AppContent: React.FC = () => {
         return <WildcardMarketing />;
       case View.Verified:
         return <Verified isVerified={user.isVerified} onVerificationSuccess={handleVerificationSuccess} />;
+      case View.EnterpriseSSO:
+        return <EnterpriseSSO user={user} />;
       case View.Dashboard:
       default:
         return <Dashboard user={user} consentPreferences={consentPreferences} activityLog={activityLog} onProfilePictureUpdate={handleProfilePictureUpdate} onUserUpdate={handleUserUpdate} />;
@@ -306,6 +310,7 @@ const AppContent: React.FC = () => {
     { view: View.Complaints, label: 'Complaints', icon: <ComplaintIcon /> },
     { view: View.WildcardMarketing, label: 'Wildcard Marketing', icon: <WildcardMarketingIcon /> },
     { view: View.Verified, label: 'Get Verified', icon: <VerifiedIcon /> },
+    { view: View.EnterpriseSSO, label: 'Enterprise SSO', icon: <SSOIcon /> },
   ];
 
   const businessNavItems = [

@@ -25,11 +25,32 @@ export interface ComplaintAnalysis {
   recommendations: string[];
 }
 
-export const categorizeComplaint = async (complaintDetails: string, category: string): Promise<ComplaintAnalysis | null> => {
+export const categorizeComplaint = async (
+    complaintDetails: string, 
+    category: string, 
+    file: { mimeType: string; data: string } | null = null
+): Promise<ComplaintAnalysis | null> => {
   try {
+    const basePrompt = `Analyze the following data privacy complaint, which has been categorized by the user as "${category}". Based on the details, determine the severity level (Low, Medium, or High) and provide a list of 2-3 concise, actionable recommendations for the user to take next. Details: ${complaintDetails}`;
+    
+    const parts = [];
+
+    if (file) {
+        const promptWithFileContext = `${basePrompt}\n\nPlease also consider the content of the attached document when making your analysis.`;
+        parts.push({ text: promptWithFileContext });
+        parts.push({
+            inlineData: {
+                mimeType: file.mimeType,
+                data: file.data,
+            },
+        });
+    } else {
+        parts.push({ text: basePrompt });
+    }
+
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: `Analyze the following data privacy complaint, which has been categorized by the user as "${category}". Based on the details, determine the severity level (Low, Medium, or High) and provide a list of 2-3 concise, actionable recommendations for the user to take next. Details: ${complaintDetails}`,
+      contents: { parts },
       config: {
         responseMimeType: "application/json",
         responseSchema: complaintAnalysisSchema,
