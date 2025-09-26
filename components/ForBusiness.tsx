@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { generateFeatureImage } from '../services/geminiService';
 import { useToast } from '../hooks/useToast';
+import AutomatedConsentIcon from './icons/AutomatedConsentIcon';
+import AuditTrailIcon from './icons/AuditTrailIcon';
+import DataRequestIcon from './icons/DataRequestIcon';
 
 interface FeatureCardProps {
     title: string;
@@ -32,7 +35,9 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon, ima
         }
 
         return () => {
-            observer.disconnect();
+            if (cardRef.current) {
+                observer.unobserve(cardRef.current);
+            }
         };
     }, [onVisible]);
 
@@ -96,6 +101,17 @@ const features = [
     }
 ];
 
+const ComplianceCard: React.FC<{ title: string, description: string, icon: React.ReactNode }> = ({ title, description, icon }) => (
+    <div className="text-center p-6 border border-gray-200 rounded-lg transition-all duration-300 hover:shadow-lg hover:border-brand-primary">
+        <div className="inline-block bg-brand-primary/10 text-brand-primary p-4 rounded-full mb-4">
+            {icon}
+        </div>
+        <h3 className="text-xl font-bold text-brand-dark mb-2">{title}</h3>
+        <p className="text-gray-600">{description}</p>
+    </div>
+);
+
+
 const CACHE_KEY = 'unime-for-business-images';
 
 const ForBusiness: React.FC = () => {
@@ -107,13 +123,13 @@ const ForBusiness: React.FC = () => {
     // Load images from cache on initial mount
     useEffect(() => {
         try {
-            const cachedData = localStorage.getItem(CACHE_KEY);
+            const cachedData = sessionStorage.getItem(CACHE_KEY);
             if (cachedData) {
                 setImages(JSON.parse(cachedData));
             }
         } catch (error) {
             console.error("Failed to parse cached images:", error);
-            localStorage.removeItem(CACHE_KEY);
+            sessionStorage.removeItem(CACHE_KEY);
         }
     }, []);
 
@@ -130,7 +146,12 @@ const ForBusiness: React.FC = () => {
             if (imageUrl) {
                 setImages(prevImages => {
                     const newImages = { ...prevImages, [title]: imageUrl };
-                    localStorage.setItem(CACHE_KEY, JSON.stringify(newImages));
+                    try {
+                        sessionStorage.setItem(CACHE_KEY, JSON.stringify(newImages));
+                    } catch (error) {
+                        console.error("Failed to cache generated images in sessionStorage:", error);
+                        // Silently fail on cache write error. The app remains functional.
+                    }
                     return newImages;
                 });
             } else {
@@ -179,6 +200,35 @@ const ForBusiness: React.FC = () => {
                             onVisible={() => handleGenerateImage(feature.title, feature.prompt)}
                         />
                     ))}
+                </div>
+            </div>
+
+            <div className="bg-white py-12 md:py-16">
+                <div className="max-w-6xl mx-auto px-8">
+                    <div className="text-center">
+                        <h2 className="text-3xl font-bold text-brand-dark mb-4">Stay Compliant with GDPR & POPIA</h2>
+                        <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                            UniMe is designed with privacy at its core, providing the tools you need to meet your data protection obligations effortlessly.
+                        </p>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-8 mt-12">
+                        <ComplianceCard
+                            title="Automated Consent Management"
+                            description="Capture and manage granular user consent in real-time. Our platform logs every consent change, ensuring you always have an up-to-date record of user preferences."
+                            icon={<AutomatedConsentIcon className="w-8 h-8" />}
+                        />
+                         <ComplianceCard
+                            title="Comprehensive Audit Trails"
+                            description="Access immutable, timestamped logs of all data sharing and consent activities. Easily demonstrate compliance to regulators and build trust with your customers."
+                            icon={<AuditTrailIcon className="w-8 h-8" />}
+                        />
+                         <ComplianceCard
+                            title="Streamlined Data Requests"
+                            description="Effortlessly handle Data Subject Access Requests (DSARs). UniMe provides a centralized way for users to access their data, reducing your administrative burden."
+                            icon={<DataRequestIcon className="w-8 h-8" />}
+                        />
+                    </div>
                 </div>
             </div>
         </div>

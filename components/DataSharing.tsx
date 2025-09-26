@@ -5,7 +5,7 @@ import { useToast } from '../hooks/useToast';
 import Modal from './common/Modal';
 
 const PartnerCard: React.FC<{ partner: BusinessPartner, onManage: (partner: BusinessPartner) => void }> = ({ partner, onManage }) => (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col">
+    <div data-tour="partner-card" className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col">
         <div className="flex items-center p-5 border-b border-gray-200">
             <img src={partner.logo} alt={`${partner.name} logo`} className="w-12 h-12 rounded-full mr-4"/>
             <div>

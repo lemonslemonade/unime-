@@ -513,7 +513,7 @@ const Complaints: React.FC = () => {
                                                 <p className="font-bold text-brand-dark text-lg">{complaint.category}</p>
                                                 <p className="text-sm text-gray-500">{complaint.businessInvolved || 'N/A'}</p>
                                             </div>
-                                            <span className={`px-3 py-1 text-xs font-semibold rounded-full leading-none ${styles.badge}`}>{isPending ? 'Pending Sync' : complaint.severity}</span>
+                                            <span className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full leading-none ${styles.badge}`}>{isPending ? 'Pending Sync' : complaint.severity}</span>
                                         </div>
                                         <div className="mt-3 text-xs text-gray-400 flex items-center">
                                             {isPending && !syncingIds.has(complaint.id) && (

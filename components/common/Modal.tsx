@@ -17,28 +17,79 @@ const sizeClasses = {
 };
 
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, titleIcon, size = 'md' }) => {
-  const modalRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const modalContentRef = useRef<HTMLDivElement>(null);
+  const triggerElementRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-
     if (isOpen) {
+      triggerElementRef.current = document.activeElement as HTMLElement;
+
+      // Set focus to the first focusable element in the modal after a short delay
+      setTimeout(() => {
+        if (modalContentRef.current) {
+          const focusableElements = modalContentRef.current.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), details, [tabindex]:not([tabindex="-1"])'
+          );
+          if (focusableElements.length > 0) {
+            focusableElements[0].focus();
+          } else {
+            // Fallback to the modal content itself if no focusable elements are found
+            modalContentRef.current.focus();
+          }
+        }
+      }, 100);
+
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          onClose();
+          return;
+        }
+
+        if (event.key === 'Tab') {
+          if (!modalContentRef.current) return;
+          
+          const focusableElements = modalContentRef.current.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), details, [tabindex]:not([tabindex="-1"])'
+          );
+          
+          if (focusableElements.length === 0) {
+            event.preventDefault();
+            return;
+          }
+
+          const firstElement = focusableElements[0];
+          const lastElement = focusableElements[focusableElements.length - 1];
+
+          if (event.shiftKey) { // Shift + Tab
+            if (document.activeElement === firstElement) {
+              lastElement.focus();
+              event.preventDefault();
+            }
+          } else { // Tab
+            if (document.activeElement === lastElement) {
+              firstElement.focus();
+              event.preventDefault();
+            }
+          }
+        }
+      };
+
       document.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
-    }
 
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-    };
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+        document.body.style.overflow = 'unset';
+        if (triggerElementRef.current) {
+          triggerElementRef.current.focus();
+        }
+      };
+    }
   }, [isOpen, onClose]);
 
   const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (modalRef.current && event.target === modalRef.current) {
+    if (backdropRef.current && event.target === backdropRef.current) {
       onClose();
     }
   };
@@ -49,7 +100,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, titleIc
 
   return (
     <div
-      ref={modalRef}
+      ref={backdropRef}
       onClick={handleBackdropClick}
       className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 transition-opacity duration-300 animate-fade-in"
       role="dialog"
@@ -72,7 +123,11 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, titleIc
             animation: slide-up 0.3s ease-out forwards;
         }
       `}</style>
-      <div className={`bg-white rounded-xl shadow-2xl w-full ${sizeClasses[size]} flex flex-col animate-slide-up max-h-[90vh]`}>
+      <div
+        ref={modalContentRef}
+        tabIndex={-1}
+        className={`bg-white rounded-xl shadow-2xl w-full ${sizeClasses[size]} flex flex-col animate-slide-up max-h-[90vh] outline-none`}
+      >
         {title && (
             <div className="p-6 border-b">
                 <div className="flex items-start">

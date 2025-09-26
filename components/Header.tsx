@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { UserProfile, View } from '../types';
 
@@ -14,9 +13,19 @@ const viewTitles: Record<View, string> = {
   [View.DataSharing]: 'Data Sharing Overview',
   [View.DataSharingAuditLog]: 'Data Sharing Audit Log',
   [View.Complaints]: 'Submit a Complaint',
+  [View.WildcardMarketing]: 'Wildcard Marketing',
   [View.Verified]: 'UniMe Verified',
   [View.ForBusiness]: 'For Businesses',
   [View.EnterpriseSSO]: 'Enterprise SSO',
+  [View.BusinessDashboard]: 'Business Dashboard',
+  // FIX: Add missing view titles to satisfy the Record<View, string> type.
+  [View.CompanyHome]: 'Company Home',
+  [View.CustomerDetails]: 'Customer Details',
+  [View.CustomerDataIssues]: 'Customer Data Issues',
+  [View.CompanyWildCardsView]: 'Company Wild Cards',
+  [View.TargetedMarketing]: 'Targeted Marketing',
+  [View.Messages]: 'Messages',
+  [View.SendMessages]: 'Send Messages',
 };
 
 const Header: React.FC<HeaderProps> = ({ user, onLogout, activeView }) => {
